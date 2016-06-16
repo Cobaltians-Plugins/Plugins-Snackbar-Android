@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import org.cobaltians.cobalt.Cobalt;
+import org.cobaltians.cobalt.fragments.CobaltFragment;
 import org.cobaltians.cobalt.plugin.CobaltAbstractPlugin;
 import org.cobaltians.cobalt.plugin.CobaltPluginWebContainer;
 import org.json.JSONException;
@@ -49,32 +50,38 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 
 			Snackbar snackbar = Snackbar.make(webContainer.getFragment().getView(), text, duration);
 
-			JSONObject actionOptions = data.optJSONObject("action");
-			if (actionOptions != null) {
+			String button = data.optString("button");
+			if (button != null && button.length() > 0) {
 				// Set action callback
 				final String callback = message.optString(Cobalt.kJSCallback);
-				snackbar.setAction(actionOptions.optString("text", "Your action"), new View.OnClickListener() {
+				snackbar.setAction(button, new View.OnClickListener() {
 					@Override
 					public void onClick(View view) {
 						if (callback != null) {
-							webContainer.getFragment().sendCallback(callback, null);
-						} else {
-							if (Cobalt.DEBUG) {
-								Log.d(TAG, "No callback specified");
+							CobaltFragment fragment = webContainer.getFragment();
+
+							if (fragment != null) {
+								fragment.sendCallback(callback, null);
 							}
 						}
 					}
 				});
 
 				// Set action color
-				int actionColor = parseColorCode(actionOptions.optString("color"));
-				if (actionColor != Integer.MAX_VALUE) {
-					snackbar.setActionTextColor(actionColor);
+				String colorCode = data.optString("buttonColor");
+				if (colorCode != null) {
+					try {
+						int color = Cobalt.parseColor(colorCode);
+						snackbar.setActionTextColor(color);
+					}
+					catch (IllegalArgumentException e) {
+
+					}
 				}
 			}
 			else if (duration == Snackbar.LENGTH_INDEFINITE) {
 				Log.d(TAG, "Snackbars with INFINITE duration must have an action, using LONG instead");
-				snackbar.setDuration(Snackbar.LENGTH_SHORT);
+				snackbar.setDuration(Snackbar.LENGTH_LONG);
 			}
 
 			snackbar.show();
@@ -82,22 +89,5 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 		catch (JSONException e) {
 
 		}
-	}
-
-	/**
-	 * Parse color code in RGB format
-	 * @param code String in #XXXXXX format
-	 * @return parsed int value or Integer.MAX_VALUE if input is null or does not match the required format
-	 */
-	private static int parseColorCode(String code) {
-		if (code != null) {
-			// RGB color
-			Matcher rgbMatcher = Pattern.compile("#([0-9ABCDEFabcdef]{6})").matcher(code);
-			if (rgbMatcher.matches()) {
-				return (int) Long.parseLong(rgbMatcher.group(1).toLowerCase(), 16) + 0xFF000000;
-			}
-		}
-
-		return Integer.MAX_VALUE;
 	}
 }
