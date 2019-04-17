@@ -25,6 +25,7 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 	public static final String TAG = SnackbarPlugin.class.getSimpleName();
 
 	private static SnackbarPlugin instance;
+	private String mPluginName;
 
 	public static CobaltAbstractPlugin getInstance(CobaltPluginWebContainer webContainer) {
 		if (instance == null) {
@@ -44,6 +45,7 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 	public void onMessage(final CobaltPluginWebContainer webContainer, final JSONObject message) {
 		try {
 			JSONObject data = message.getJSONObject(Cobalt.kJSData);
+			mPluginName = message.getString(Cobalt.kJSPluginName);
 
 			String text = data.optString("text", "Your snackbar text");
 			int duration = data.optInt("duration", Snackbar.LENGTH_SHORT);
@@ -52,17 +54,12 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 
 			String button = data.optString("button");
 			if (button != null && button.length() > 0) {
-				// Set action callback
-				final String callback = message.optString(Cobalt.kJSCallback);
 				snackbar.setAction(button, new View.OnClickListener() {
 					@Override
 					public void onClick(View view) {
-						if (callback != null) {
-							CobaltFragment fragment = webContainer.getFragment();
-
-							if (fragment != null) {
-								fragment.sendCallback(callback, null);
-							}
+						CobaltFragment fragment = webContainer.getFragment();
+						if (fragment != null) {
+							fragment.sendPlugin(mPluginName, null);
 						}
 					}
 				});
@@ -75,7 +72,7 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 						snackbar.setActionTextColor(color);
 					}
 					catch (IllegalArgumentException e) {
-
+						Log.d(TAG, "Snackbars invalid buttonColor");
 					}
 				}
 			}
