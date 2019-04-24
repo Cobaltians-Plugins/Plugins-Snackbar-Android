@@ -29,7 +29,7 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 	
 	@Override
 	public void onMessage(@NonNull final CobaltPluginWebContainer webContainer, @NonNull String action,
-			@Nullable JSONObject data, @Nullable String callbackChannel)
+			@Nullable JSONObject data, @Nullable final String callbackChannel)
 	{
 		String text = data.optString("text", "Your snackbar text");
 		int duration = data.optInt("duration", Snackbar.LENGTH_SHORT);
@@ -41,11 +41,7 @@ public class SnackbarPlugin extends CobaltAbstractPlugin
 			snackbar.setAction(button, new View.OnClickListener() {
 				@Override
 				public void onClick(View view) {
-					CobaltFragment fragment = webContainer.getFragment();
-					if (fragment != null) {
-						// TODO: use PubSub with callbackChannel
-						//fragment.sendPlugin(mPluginName, null);
-					}
+					Cobalt.publishMessage(null, callbackChannel);
 				}
 			});
 
